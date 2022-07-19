@@ -1,0 +1,281 @@
+---
+title: "Neural Networks"
+author: "Amin Fesharaki"
+date: "11/18/2021"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+#Neural Networks - Chapter 9 Problems
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(nnet)
+library(NeuralNetTools)
+library(caret)
+library(plyr)
+library(C50) 
+library(rpart)
+```
+
+``` {r}
+bank_train <- read.csv(file = "/Users/datascience/Desktop/ADS 502 Data Sets/Website Data Sets/bank_marketing_training.csv")
+bank_test <- read.csv(file = "/Users/datascience/Desktop/ADS 502 Data Sets/Website Data Sets/bank_marketing_test.csv")
+
+````
+
+#24. Prepare the data set for neural network modeling,including standardizing the variables.
+
+``` {r}
+
+# Training Data Set
+
+#Turn non-numerical variables into factors 
+bank_train$job <- factor(bank_train$job)
+bank_train$marital <- factor(bank_train$marital)
+bank_train$default <- factor(bank_train$default)
+bank_train$housing <- factor(bank_train$housing)
+bank_train$education <- factor(bank_train$education)
+bank_train$loan <- factor(bank_train$loan)
+bank_train$contact <- factor(bank_train$contact)
+bank_train$month <- factor(bank_train$month)
+bank_train$previous_outcome <- factor(bank_train$previous_outcome)
+bank_train$response <- factor(bank_train$response)
+# Change Response to yes and No
+bank_train$response <- revalue (bank_train$response, c("yes"=1))
+bank_train$response <- revalue (bank_train$response, c("no"=0))
+
+# min - max Standardization 
+bank_train$age.mm <- (bank_train$age - min(bank_train$age)) / (max(bank_train$age)- min(bank_train$age))
+
+bank_train$duration.mm <- (bank_train$duration - min(bank_train$duration)) / (max(bank_train$duration)- min(bank_train$duration))
+
+bank_train$campaign.mm <- (bank_train$campaign - min(bank_train$campaign)) / (max(bank_train$campaign)- min(bank_train$campaign))
+
+bank_train$days_since_previous.mm <- (bank_train$days_since_previous - min(bank_train$days_since_previous)) / (max(bank_train$days_since_previous)- min(bank_train$days_since_previous))
+
+bank_train$previous.mm <- (bank_train$previous - min(bank_train$previous)) / (max(bank_train$previous)- min(bank_train$previous))
+
+
+bank_train$emp.var.rate.mm <- (bank_train$emp.var.rate - min(bank_train$emp.var.rate)) / (max(bank_train$emp.var.rate)- min(bank_train$emp.var.rate))
+
+bank_train$cons.price.idx.mm <- (bank_train$cons.price.idx - min(bank_train$cons.price.idx)) / (max(bank_train$cons.price.idx)- min(bank_train$cons.price.idx))
+                               
+bank_train$cons.price.idx.mm <- (bank_train$cons.price.idx - min(bank_train$cons.price.idx)) / (max(bank_train$cons.price.idx)- min(bank_train$cons.price.idx)) 
+
+bank_train$cons.conf.idx.mm <- (bank_train$cons.conf.idx - min(bank_train$cons.conf.idx)) / (max(bank_train$cons.conf.idx)- min(bank_train$cons.conf.idx)) 
+
+bank_train$nr.employed.mm <- (bank_train$nr.employed - min(bank_train$nr.employed )) / (max(bank_train$nr.employed )- min(bank_train$nr.employed))                       
+````
+
+#25. Using the training dataset,create a neural network model to predict a customer’s Response using whichever predictors you think appropriate. Obtain the predicted responses.
+
+``` {r}
+# Creating Neural
+nnet01 <- nnet (response ~ age.mm + job + marital + education + contact + housing + loan + duration.mm + previous.mm + previous_outcome, data = bank_train, size = 1, maxit = 100)
+````
+#26. Plot the neural network.
+
+``` {r}
+plotnet(nnet01)
+# make predictions (returns probabilities)
+bank_train$pred_prob <- predict(object = nnet01, newdata = bank_train)
+
+````
+#27. Evaluate the neural network model using the test dataset.Construct a contingency table to compare the actual and predicted values of Response.
+``` {r}
+# Test Data Set
+#Turn non-numerical variables into factors 
+bank_test$job <- factor(bank_test$job)
+bank_test$marital <- factor(bank_test$marital)
+bank_test$default <- factor(bank_test$default)
+bank_test$housing <- factor(bank_test$housing)
+bank_test$education <- factor(bank_test$education)
+bank_test$loan <- factor(bank_test$loan)
+bank_test$contact <- factor(bank_test$contact)
+bank_test$month <- factor(bank_test$month)
+bank_test$previous_outcome <- factor(bank_test$previous_outcome)
+bank_test$response <- factor(bank_test$response)
+# Change Response to yes and No
+bank_test$response <- revalue (bank_test$response, c("yes"=1))
+bank_test$response <- revalue (bank_test$response, c("no"=0))
+
+# min - max Standardization 
+bank_test$age.mm <- (bank_test$age - min(bank_test$age)) / (max(bank_test$age)- min(bank_test$age))
+
+bank_test$duration.mm <- (bank_test$duration - min(bank_test$duration)) / (max(bank_test$duration)- min(bank_test$duration))
+
+bank_test$campaign.mm <- (bank_test$campaign - min(bank_test$campaign)) / (max(bank_test$campaign)- min(bank_test$campaign))
+
+bank_test$days_since_previous.mm <- (bank_test$days_since_previous - min(bank_test$days_since_previous)) / (max(bank_test$days_since_previous)- min(bank_test$days_since_previous))
+
+bank_test$previous.mm <- (bank_test$previous - min(bank_test$previous)) / (max(bank_test$previous)- min(bank_test$previous))
+
+
+bank_test$emp.var.rate.mm <- (bank_test$emp.var.rate - min(bank_test$emp.var.rate)) / (max(bank_test$emp.var.rate)- min(bank_test$emp.var.rate))
+
+bank_test$cons.price.idx.mm <- (bank_test$cons.price.idx - min(bank_test$cons.price.idx)) / (max(bank_test$cons.price.idx)- min(bank_test$cons.price.idx))
+                               
+bank_test$cons.price.idx.mm <- (bank_test$cons.price.idx - min(bank_test$cons.price.idx)) / (max(bank_test$cons.price.idx)- min(bank_test$cons.price.idx)) 
+
+bank_test$cons.conf.idx.mm <- (bank_test$cons.conf.idx - min(bank_test$cons.conf.idx)) / (max(bank_test$cons.conf.idx)- min(bank_test$cons.conf.idx)) 
+
+
+                                 
+bank_test$nr.employed.mm <- (bank_test$nr.employed - min(bank_test$nr.employed )) / (max(bank_test$nr.employed )- min(bank_test$nr.employed)) 
+
+
+# make predictions (returns probabilities)
+bank_test$pred_prob_test <- predict(object = nnet01, newdata = bank_test)
+# convert to classes
+bank_test$pred_test <- (bank_test$pred_prob_test > 0.5)*1
+
+# performance metrics / Confusion Matrix
+bank_test[c('response', 'pred_test')] <- lapply(bank_test[c('response', 'pred_test')], as.factor)
+confusionMatrix(bank_test$pred_test, bank_test$response, positive='1')
+cm
+
+
+````
+
+```{r}
+ #Contingency Table
+c.pred <- table(bank_test$response, bank_test$pred_test)
+rownames(c.pred) <- c("Actual: No", "Actual: Yes")
+colnames(c.pred) <- c("Predicted: No", "Predicted: Yes")
+addmargins(A = c.pred, FUN = list(Total=sum), quiet = TRUE)
+
+TN0 <- c.pred[1,1]
+FN0 <- c.pred[2,1]
+FP0 <- c.pred[1,2]
+TP0 <- c.pred[2,2]
+
+```
+
+# 28. Which baseline model do we compare your neural network model against? Did it out- perform the baseline according to accuracy?
+``` {r}
+#????????????????????????#
+````
+
+#29. Using the same predictors you used for your neural network model, build models to predict Response using the following algorithms: (a) Cart (b) C5.0 (C) Naives Bayes
+
+``` {r}
+
+# Setting up Predictions
+X = data.frame(age.mm = bank_test$age.mm, job = bank_test$job, marital = bank_test$marital, education = bank_test$education, contact = bank_test$contact, housing = bank_test$housing, loan =  bank_test$loan, duration.mm  = bank_test$duration.mm, previous.mm =  bank_test$previous.mm,  previous_outcome  = bank_test$previous_outcome)
+
+````
+#(a) Cart
+``` {r}
+# Cart Model trained by training data set
+library(rpart)
+cart  <- rpart(formula = response ~ age.mm + job + marital + education + contact + housing + loan + duration.mm + previous.mm + previous_outcome, data = bank_train, method = "class")
+
+bank_test$pred_cart <- predict(object = cart, newdata = X)
+
+# Predictions Test Data Set
+Pred_cart = predict(object = cart, newdata = X, type = "class")
+head(Pred_cart)
+````
+```{r}
+# Evaluation Metrics for Cart
+
+cart.pred <- table(bank_test$response, Pred_cart)
+rownames(cart.pred) <- c("Actual: No", "Actual: Yes")
+colnames(cart.pred) <- c("Predicted: No", "Predicted: Yes")
+addmargins(A = cart.pred, FUN = list(Total=sum), quiet = TRUE)
+
+```
+```{r}
+# Assigning General Form of Table to matrix values for Cart
+TN1 <- cart.pred[1,1]
+FN1 <- cart.pred[2,1]
+FP1 <- cart.pred[1,2]
+TP1 <- cart.pred[2,2]
+```
+
+# (b) C5.0
+```{r}
+# C5 model trained by training data set
+c5 <- C5.0(response ~ age.mm + job + marital + education + contact + housing + loan + duration.mm + previous.mm + previous_outcome, data = bank_train)
+
+# Predictions Test Data Set
+Pred_c5 = predict(object = c5, newdata = X)
+head(Pred_c5)
+```
+
+
+```{r}
+# Evaluation Metrics for C5.0
+c5.pred <- table(bank_test$response, Pred_c5)
+rownames(c5.pred) <- c("Actual: No", "Actual: Yes")
+colnames(c5.pred) <- c("Predicted: No", "Predicted: Yes")
+addmargins(A = c5.pred, FUN = list(Total=sum), quiet = TRUE)
+
+```
+
+```{r}
+# Assigning General Form of Table to matrix values for C5.0
+TN2 <- c5.pred[1,1]
+FN2 <- c5.pred[2,1]
+FP2 <- c5.pred[1,2]
+TP2 <- c5.pred[2,2]
+```
+
+# (C) Naives Bayes
+```{r}
+# Naives Bayes model trained by training data set
+library(e1071)
+nb01 <- naiveBayes(formula = response ~ age.mm + job + marital + education + contact + housing + loan + duration.mm + previous.mm + previous_outcome, data = bank_train)
+
+# Predictions Test data set
+Pred_NB <- predict(object = nb01, newdata = X)
+head(Pred_NB)
+```
+
+```{r}
+# Evaluation Metrics for Naives Bayes
+
+nb.pred <- table(bank_test$response, Pred_NB)
+rownames(nb.pred) <- c("Actual: No", "Actual: Yes")
+colnames(nb.pred) <- c("Predicted: No", "Predicted: Yes")
+addmargins(A = nb.pred, FUN = list(Total=sum), quiet = TRUE)
+```
+
+```{r}
+# Assigning General Form of Table to matrix values for NB
+TN3 <- nb.pred[1,1]
+FN3 <- nb.pred[2,1]
+FP3 <- nb.pred[1,2]
+TP3 <- nb.pred[2,2]
+```
+
+
+#30. Compare the results of your neural network model with the three models from the previous exercise, according to the following criteria. Discuss in detail which model performed best and worst according to each criterion. (A) Accuracy (B) Sensitivity (C) Specificity 
+
+```{r}
+# Neural Network 
+Acc0 <- (TN0 + TP0) / (TN0 + FN0 + FP0 + TP0) # Accuracy
+Sens0 <- (TP0) / (FN0 + TP0) #Sensitivity
+Spec0 <- (TN0) / (TN0 + FP0) # Specificity
+
+# Cart Model
+Acc1 <- (TN1 + TP1) / (TN1 + FN1 + FP1 + TP1) # Accuracy
+Sens1 <- (TP1) / (FN1 + TP1) #Sensitivity
+Spec1 <- (TN1) / (TN1 + FP1) # Specificity
+
+# C5.0 Model
+Acc2 <- (TN2 + TP2) / (TN2 + FN2 + FP2 + TP2) # Accuracy
+Sens2 <- (TP2) / (FN2 + TP2) #Sensitivity
+Spec2 <- (TN2) / (TN2 + FP2) # Specificity
+
+# Naives Bayes
+Acc3 <- (TN3 + TP3) / (TN3 + FN3 + FP3 + TP3) # Accuracy
+Sens3 <- (TP3) / (FN3 + TP3) #Sensitivity
+Spec3 <- (TN3) / (TN3 + FP3) # Specificity
+
+cat ("---Neural Network----", "\nAccuracy = ", Acc0, "\nSensitivity = ", Sens0, "\nSpecificty=", Spec0)
+cat ("\n---Cart Model---", "\nAccuracy = ", Acc1, "\nSensitivity = ", Sens1, "\nSpecificty=", Spec1)
+cat ("\n---C5.0 Model---", "\nAccuracy = ", Acc2, "\nSensitivity = ", Sens2, "\nSpecificty=", Spec2)
+cat ("\n---Naives Bayes---", "\nAccuracy = ", Acc3, "\nSensitivity = ", Sens3, "\nSpecificty=", Spec3)
+```

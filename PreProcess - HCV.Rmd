@@ -1,0 +1,118 @@
+---
+title: "Question 4 - HCV"
+author: "Amin FEsharaki"
+date: "5/16/2022"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+# Use the HCV Data Set at the UCI Machine Learning Repository and pick the numeric predictors 
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(Hmisc)
+library(e1071) 
+library(caret)
+```
+
+# Use the HCV Data Set at the UCI Machine Learning Repository and pick the numeric predictors 
+```{r Data}
+data <- read.csv('/Users/datascience/Desktop/hcvdat0.csv') #Load Data
+df <- data[, lapply(data, class) == 'numeric'] #Subset to exclude non-numerical data types
+```
+
+# A) Are there any missing data in the predictors? If yes, summarize the missing data by each predictor. 
+```{r Missing}
+sapply(df, function(x) sum(is.na(x))) # using sapply to find NA's and report the number of NA's for each predictor
+```
+Yes, the number of missing values are shown in the output above.  
+# B) Are there any predictors with skewed distributions? 
+
+```{r}
+skew <- lapply(df, skewness, na.rm = TRUE) #Compute skewness
+```
+All predictors are all skewed. However, CHE and ALB has a skewness of -0.11 and -0.17 respectively, which indicates a very slight skewness, and therefore, is approximately normal. This can also be supported by viewing each predictor's respective histogram in part C. 
+
+# C) Plot histograms of all predictors to observe skewness visually
+```{r Histogram}
+hist.data.frame(df) #Plotting all histograms using Hmisc Package
+```
+ALP, ALT, AST, BIL, CREA, and GGT are right skewed, while PROT is left skewed. CHE, CHOL, and ALB are very slight skewed.  
+
+# D) Compute skewness using the skewness function from the e1071 package. 
+```{r Skewness}
+Skewness <- lapply(df, skewness, na.rm = TRUE) #Compute skewness using the e1017 package
+```
+Computed Skewness values are as follows: ALB(-0.18), ALP(4.63), ALT(5.48), AST(4.91), BIL(8.34), CHE(0.11), CHOL(0.38), CREA(15.09), GGT(5.61), and PROT(-0.96).  
+
+
+# E) Apply box-cox transformations to the data then recompute the skewness metrics and report the differences; does box-cox transformation help? 
+
+```{r BoxCox}
+bct <- lapply(df, BoxCoxTrans, na.rm = TRUE) #Box Cos Transformation on data
+```
+```{r Box Cox}
+df2 <- df + 10^-5 #Added a negligible number to ensure that no 0's in the data set
+BCT <- lapply(df2, BoxCoxTrans, na.rm = TRUE) #Box Cox Trans to all the predictors
+
+#Predict transformation values and Report Skewness for all predictors
+
+trans_ALB <- predict(BCT$ALB, df2$ALB) #Predicted Values 
+skew_ALB <- skewness(trans_ALB, na.rm = TRUE)  #Box Cox Skewness Value
+Diff_ALB <-skew_ALB - Skewness$ALB #Diff in Skewness
+
+trans_ALP <- predict(BCT$ALP, df2$ALP) 
+skew_ALP <- skewness(trans_ALP, na.rm = TRUE)
+Diff_ALP <-skew_ALP - Skewness$ALP 
+
+trans_ALT <- predict(BCT$ALT, df2$ALT)
+skew_ALT <- skewness(trans_ALT, na.rm = TRUE)
+Diff_ALT <-skew_ALT - Skewness$ALT 
+
+trans_AST <- predict(BCT$AST, df2$AST)
+skew_AST <- skewness(trans_AST, na.rm = TRUE)
+Diff_AST <-skew_AST - Skewness$AST 
+
+trans_BIL <- predict(BCT$BIL, df2$BIL)
+skew_BIL <- skewness(trans_BIL, na.rm = TRUE)
+Diff_BIL <-skew_BIL - Skewness$BIL 
+
+trans_CHE <- predict(BCT$CHE, df2$CHE)
+skew_CHE <- skewness(trans_CHE, na.rm = TRUE)
+Diff_CHE <-skew_CHE - Skewness$CHE
+
+trans_CHOL <- predict(BCT$CHOL, df2$CHOL)
+skew_CHOL <- skewness(trans_CHOL, na.rm = TRUE)
+Diff_CHOL <-skew_CHOL - Skewness$CHOL 
+
+trans_CREA <- predict(BCT$CREA, df2$CREA)
+skew_CREA <- skewness(trans_CREA, na.rm = TRUE)
+Diff_CREA <-skew_CREA - Skewness$CREA 
+
+trans_GGT <- predict(BCT$GGT, df2$GGT)
+skew_GGT <- skewness(trans_GGT, na.rm = TRUE)
+Diff_GGT <-skew_GGT- Skewness$GGT 
+
+trans_PROT <- predict(BCT$PROT, df2$PROT)
+skew_PROT <- skewness(trans_PROT, na.rm = TRUE)
+Diff_PROT <-skew_PROT - Skewness$PROT 
+```
+The skewness has significantly been lowered and all predictors show a roughly normal distribution. Therefore, it is clear that box cox transformation helped for this dataset. 
+
+# F) Plot histograms of transformed predictors to observe changes to skewness visually. 
+
+```{r Transformed Histograms}
+#Histogram for Box Cox transformed predictors
+par(mfrow=c(3,3)) 
+hist(trans_ALB)
+hist(trans_ALT)
+hist(trans_AST)
+hist(trans_BIL)
+hist(trans_CHE)
+hist(trans_CHOL)
+hist(trans_CREA)
+hist(trans_GGT)
+hist(trans_PROT)
+```
+As mentioned previously, all histograms appear to be more normally distributed than prior to the box cox transformation.
