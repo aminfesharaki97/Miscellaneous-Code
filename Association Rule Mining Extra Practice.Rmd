@@ -1,0 +1,46 @@
+---
+title: 'R Code for Chapter 5 of Introduction to Data Mining: Association Rule Mining'
+author: "Amin Fesharaki"
+date: "11/29/2021"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+library(arules)
+library(arulesViz)
+```
+
+
+```{r}
+#' Load the data set
+data(Groceries)
+summary(Groceries)
+inspect(head(Groceries))
+```
+
+```{r}
+#' Mine Association Rules
+rules <- apriori(Groceries, parameter=list(support=0.001, confidence=.8))
+
+#' # Interactive inspect with sorting, filtering and paging
+inspectDT(rules)
+```
+
+```{r}
+#' # Plot rules as a scatter plot using an interactive html widget
+plot(rules)
+```
+
+```{r}
+ # Plot rules as a graph using an interactive html widget
+
+plot(rules, method = "graph")
+
+```
+
+
+
+
